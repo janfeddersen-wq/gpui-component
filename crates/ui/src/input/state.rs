@@ -118,7 +118,7 @@ pub(crate) fn init(cx: &mut App) {
         #[cfg(not(target_os = "macos"))]
         KeyBinding::new("ctrl-delete", DeleteToNextWordEnd, Some(CONTEXT)),
         KeyBinding::new("enter", Enter { secondary: false }, Some(CONTEXT)),
-        KeyBinding::new("secondary-enter", Enter { secondary: true }, Some(CONTEXT)),
+        KeyBinding::new("shift-enter", Enter { secondary: true }, Some(CONTEXT)),
         KeyBinding::new("escape", Escape, Some(CONTEXT)),
         KeyBinding::new("up", MoveUp, Some(CONTEXT)),
         KeyBinding::new("down", MoveDown, Some(CONTEXT)),
