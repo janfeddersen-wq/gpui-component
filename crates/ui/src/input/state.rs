@@ -1164,8 +1164,15 @@ impl InputState {
             self.clear_inline_completion(cx);
         }
 
-        if self.mode.is_multi_line() {
-            // Get current line indent
+        // Determine if we should insert a newline:
+        // - Code editors: Always insert newline on Enter (code editors don't submit on Enter)
+        // - Non-code-editor multiline: Only insert newline on Shift+Enter (secondary: true)
+        // - Single line: Never insert newline, just propagate
+        let should_insert_newline = self.mode.is_multi_line()
+            && (self.mode.is_code_editor() || action.secondary);
+
+        if should_insert_newline {
+            // Get current line indent (only for code editors)
             let indent = if self.mode.is_code_editor() {
                 self.indent_of_next_line()
             } else {
@@ -1177,7 +1184,8 @@ impl InputState {
             self.replace_text_in_range_silent(None, &new_line_text, window, cx);
             self.pause_blink_cursor(cx);
         } else {
-            // Single line input, just emit the event (e.g.: In a dialog to confirm).
+            // Single line input or multiline with plain Enter (submit),
+            // just emit the event (e.g.: In a dialog to confirm).
             cx.propagate();
         }
 
