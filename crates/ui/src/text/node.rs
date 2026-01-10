@@ -1233,8 +1233,9 @@ impl BlockNode {
                 Self::render_table(self, &options, node_cx, window, cx).into_any_element()
             }
             BlockNode::Divider { .. } => div()
-                .pb(mb)
-                .child(div().id("divider").bg(cx.theme().border).h(px(2.)))
+                .pt(mb)   // Top padding
+                .pb(mb)   // Bottom padding  
+                .child(div().id("divider").bg(cx.theme().border).h(px(3.)))  // Thicker line
                 .into_any_element(),
             BlockNode::Break { .. } => div().id("break").into_any_element(),
             BlockNode::Unknown { .. } | BlockNode::Definition { .. } => div().into_any_element(),
