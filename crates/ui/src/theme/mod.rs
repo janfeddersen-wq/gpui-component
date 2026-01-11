@@ -1,5 +1,6 @@
 use crate::{
-    highlighter::HighlightTheme, notification::NotificationSettings, list::ListSettings, scroll::ScrollbarShow,
+    highlighter::HighlightTheme, list::ListSettings, notification::NotificationSettings,
+    scroll::ScrollbarShow,
 };
 use gpui::{App, Global, Hsla, Pixels, SharedString, Window, WindowAppearance, px};
 use schemars::JsonSchema;
@@ -190,7 +191,13 @@ impl From<&ThemeColor> for Theme {
         Theme {
             mode: ThemeMode::default(),
             transparent: Hsla::transparent_black(),
-            font_family: ".SystemUIFont".into(),
+            font_family: if cfg!(target_os = "macos") {
+                ".AppleSystemUIFont".into()
+            } else if cfg!(target_os = "windows") {
+                "Segoe UI".into()
+            } else {
+                "Ubuntu".into() // Common Linux UI font with proper weights
+            },
             font_size: px(16.),
             mono_font_family: if cfg!(target_os = "macos") {
                 // https://en.wikipedia.org/wiki/Menlo_(typeface)

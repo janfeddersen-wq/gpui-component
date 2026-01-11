@@ -31,7 +31,6 @@ use lsp_types::{
     InsertReplaceEdit, InsertTextFormat, TextEdit, WorkspaceEdit,
 };
 
-
 enum Lang {
     BuiltIn(Language),
     External(&'static str),

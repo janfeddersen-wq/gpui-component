@@ -13,6 +13,7 @@ pub(crate) struct ParsedDocument {
 }
 
 #[derive(Default, Clone, Copy)]
+#[allow(dead_code)]
 pub(crate) struct NodeRenderOptions {
     pub(crate) ix: usize,
     pub(crate) in_list: bool,

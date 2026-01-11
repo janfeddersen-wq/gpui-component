@@ -548,7 +548,8 @@ impl CodeBlock {
         let style = &node_cx.style;
 
         div()
-            .when(!options.is_last, |this| this.pb(style.paragraph_gap))
+            .mt(rems(0.5)) // 8px top margin for separation
+            .when(!options.is_last, |this| this.pb(rems(0.75))) // 12px bottom
             .child(
                 div()
                     .id(("codeblock", options.ix))
@@ -928,6 +929,7 @@ impl BlockNode {
                 ..
             } => v_flex()
                 .id(("li", options.ix))
+                .py(rems(0.25)) // 4px vertical spacing between list items
                 .when(*spread, |this| this.child(div()))
                 .children({
                     let mut items: Vec<Div> = Vec::with_capacity(children.len());
@@ -966,12 +968,18 @@ impl BlockNode {
                                         .relative()
                                         .items_start()
                                         .content_start()
+                                        .gap(rems(0.25)) // 4px gap between bullet and content
                                         .when(!options.todo && checked.is_none(), |this| {
-                                            this.child(list_item_prefix(
-                                                ix,
-                                                options.ordered,
-                                                options.depth,
-                                            ))
+                                            this.child(
+                                                div()
+                                                    .flex_none()
+                                                    .min_w(rems(1.25)) // Minimum width for bullet alignment
+                                                    .child(list_item_prefix(
+                                                        ix,
+                                                        options.ordered,
+                                                        options.depth,
+                                                    )),
+                                            )
                                         })
                                         .when_some(*checked, |this, checked| {
                                             // Todo list checkbox
@@ -1132,11 +1140,6 @@ impl BlockNode {
         cx: &mut App,
     ) -> AnyElement {
         let ix = options.ix;
-        let mb = if options.in_list || options.is_last {
-            rems(0.)
-        } else {
-            node_cx.style.paragraph_gap
-        };
 
         match self {
             BlockNode::Root { children, .. } => div()
@@ -1147,20 +1150,26 @@ impl BlockNode {
                 .into_any_element(),
             BlockNode::Paragraph(paragraph) => div()
                 .id(("p", ix))
-                .pb(mb)
+                .pb(if options.is_last {
+                    rems(0.)
+                } else {
+                    rems(0.75)
+                }) // 12px bottom margin
+                .line_height(relative(1.6))
                 .child(paragraph.render(node_cx, window, cx))
                 .into_any_element(),
             BlockNode::Heading {
                 level, children, ..
             } => {
-                let (text_size, font_weight) = match level {
-                    1 => (rems(2.), FontWeight::BOLD),
-                    2 => (rems(1.5), FontWeight::SEMIBOLD),
-                    3 => (rems(1.25), FontWeight::SEMIBOLD),
-                    4 => (rems(1.125), FontWeight::SEMIBOLD),
-                    5 => (rems(1.), FontWeight::SEMIBOLD),
-                    6 => (rems(1.), FontWeight::MEDIUM),
-                    _ => (rems(1.), FontWeight::NORMAL),
+                // Size, weight, top margin, bottom margin per heading level
+                let (text_size, font_weight, margin_top, margin_bottom) = match level {
+                    1 => (rems(2.), FontWeight::SEMIBOLD, rems(1.5), rems(0.5)), // 24px top, 8px bottom
+                    2 => (rems(1.5), FontWeight::SEMIBOLD, rems(1.25), rems(0.5)), // 20px top, 8px bottom
+                    3 => (rems(1.25), FontWeight::SEMIBOLD, rems(1.0), rems(0.375)), // 16px top, 6px bottom
+                    4 => (rems(1.125), FontWeight::SEMIBOLD, rems(0.75), rems(0.25)), // 12px top, 4px bottom
+                    5 => (rems(1.), FontWeight::SEMIBOLD, rems(0.75), rems(0.25)), // 12px top, 4px bottom
+                    6 => (rems(1.), FontWeight::MEDIUM, rems(0.75), rems(0.25)), // 12px top, 4px bottom
+                    _ => (rems(1.), FontWeight::NORMAL, rems(0.5), rems(0.25)),
                 };
 
                 let mut text_size = text_size.to_pixels(node_cx.style.heading_base_font_size);
@@ -1170,7 +1179,8 @@ impl BlockNode {
 
                 h_flex()
                     .id(SharedString::from(format!("h{}-{}", level, ix)))
-                    .pb(rems(0.3))
+                    .mt(margin_top)
+                    .pb(margin_bottom)
                     .whitespace_normal()
                     .text_size(text_size)
                     .font_weight(font_weight)
@@ -1179,11 +1189,13 @@ impl BlockNode {
             }
             BlockNode::Blockquote { children, .. } => div()
                 .w_full()
-                .pb(mb)
+                .mt(rems(0.5)) // 8px top margin
+                .mb(rems(0.75)) // 12px bottom margin
                 .child(
                     div()
                         .id(("blockquote", ix))
                         .w_full()
+                        .py(rems(0.25)) // 4px internal vertical padding
                         .text_color(cx.theme().muted_foreground)
                         .border_l_3()
                         .border_color(cx.theme().secondary_active)
@@ -1201,7 +1213,8 @@ impl BlockNode {
                 children, ordered, ..
             } => v_flex()
                 .id((if *ordered { "ol" } else { "ul" }, ix))
-                .pb(mb)
+                .mt(rems(0.25)) // 4px top margin
+                .pb(rems(0.5)) // 8px bottom margin
                 .children({
                     let mut items = Vec::with_capacity(children.len());
                     let mut item_index = 0;
@@ -1233,9 +1246,15 @@ impl BlockNode {
                 Self::render_table(self, &options, node_cx, window, cx).into_any_element()
             }
             BlockNode::Divider { .. } => div()
-                .pt(mb)   // Top padding
-                .pb(mb)   // Bottom padding  
-                .child(div().id("divider").bg(cx.theme().border).h(px(3.)))  // Thicker line
+                .w_full()
+                .py(rems(1.0)) // 16px vertical padding - balanced
+                .child(
+                    div()
+                        .id("divider")
+                        .w_full()
+                        .h(px(1.)) // Thinner, more elegant line
+                        .bg(cx.theme().border),
+                )
                 .into_any_element(),
             BlockNode::Break { .. } => div().id("break").into_any_element(),
             BlockNode::Unknown { .. } | BlockNode::Definition { .. } => div().into_any_element(),

@@ -1168,8 +1168,8 @@ impl InputState {
         // - Code editors: Always insert newline on Enter (code editors don't submit on Enter)
         // - Non-code-editor multiline: Only insert newline on Shift+Enter (secondary: true)
         // - Single line: Never insert newline, just propagate
-        let should_insert_newline = self.mode.is_multi_line()
-            && (self.mode.is_code_editor() || action.secondary);
+        let should_insert_newline =
+            self.mode.is_multi_line() && (self.mode.is_code_editor() || action.secondary);
 
         if should_insert_newline {
             // Get current line indent (only for code editors)
