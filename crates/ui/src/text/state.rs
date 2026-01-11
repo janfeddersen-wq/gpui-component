@@ -20,12 +20,13 @@ use crate::{
         CodeBlockActionsFn, TextViewStyle,
         document::ParsedDocument,
         format,
-        node::{self, NodeContext},
+        node::{self, BlockNode, NodeContext},
     },
     v_flex,
 };
 
 const UPDATE_DELAY: Duration = Duration::from_millis(50);
+const THROTTLED_UPDATE_DELAY: Duration = Duration::from_millis(250);
 
 const CONTEXT: &'static str = "TextView";
 pub(crate) fn init(cx: &mut App) {
@@ -302,7 +303,14 @@ struct UpdateFuture {
     timer: Timer,
     rx: Pin<Box<smol::channel::Receiver<UpdateOptions>>>,
     tx_result: smol::channel::Sender<Result<(), SharedString>>,
-    delay: Duration,
+}
+
+fn is_heavy_last_block(options: &UpdateOptions) -> bool {
+    let content = options.content.lock().unwrap();
+    matches!(
+        content.document.blocks.last(),
+        Some(BlockNode::CodeBlock(_) | BlockNode::Table(_))
+    )
 }
 
 impl UpdateFuture {
@@ -325,7 +333,6 @@ impl UpdateFuture {
             timer: Timer::never(),
             rx: Box::pin(rx),
             tx_result,
-            delay: UPDATE_DELAY,
         }
     }
 }
@@ -337,7 +344,11 @@ impl Future for UpdateFuture {
         loop {
             match self.rx.poll_next(cx) {
                 Poll::Ready(Some(options)) => {
-                    let delay = self.delay;
+                    let delay = if options.append && is_heavy_last_block(&options) {
+                        THROTTLED_UPDATE_DELAY
+                    } else {
+                        UPDATE_DELAY
+                    };
                     if options.append {
                         self.pending_text.push_str(options.pending_text.as_str());
                     } else {
