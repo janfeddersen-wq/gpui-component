@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use gpui::{Context, Pixels, Task, px};
-use smol::Timer;
+use gpui::{Context, Pixels, Task, Timer, px};
 
 static INTERVAL: Duration = Duration::from_millis(500);
 static PAUSE_DELAY: Duration = Duration::from_millis(300);
